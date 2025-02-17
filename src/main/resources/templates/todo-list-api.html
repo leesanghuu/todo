@@ -1,0 +1,160 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>📌 Todo List </title>
+    <meta charset="UTF-8">
+
+    <!-- Bootstrap CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+
+    <!-- Font Awesome (아이콘) -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/all.min.css">
+
+    <!-- jQuery 추가 (AJAX 사용) -->
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+
+    <style>
+        .fa-edit, .fa-times, .fa-check {
+            font-size: 1.0rem;
+            cursor: pointer;
+        }
+        .edit-input {
+            display: none;
+            width: 60%;
+        }
+        .completed {
+            text-decoration: line-through;
+            color: gray;
+        }
+    </style>
+</head>
+<body>
+
+<section class="vh-100" style="background-color: #e2d5de;">
+    <div class="container py-5 h-100">
+        <div class="row d-flex justify-content-center align-items-center h-100">
+            <div class="col col-xl-10">
+                <div class="card" style="border-radius: 15px;">
+                    <div class="card-body p-5">
+
+                        <h6 class="mb-3 text-center">📌 상후의 Todo List</h6>
+
+                        <!-- 할 일 추가 폼 -->
+                        <form class="d-flex justify-content-center align-items-center mb-4" onsubmit="addTodo(event)">
+                            <div class="form-outline flex-fill">
+                                <input type="text" id="new-todo" class="form-control form-control-lg" required />
+                            </div>
+                            <button type="submit" class="btn btn-primary btn-lg ms-2">Add</button>
+                        </form>
+
+                        <!-- 할 일 목록 -->
+                        <ul id="todo-list" class="list-group mb-0"></ul>
+
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<script>
+    $(document).ready(function(){
+        loadTodos();
+    });
+
+    // ✅ 할 일 목록 불러오기
+    function loadTodos() {
+        $.get("/api/todos", function (data) {
+            $("#todo-list").empty();
+            data.forEach(todo => {
+                $("#todo-list").append(renderTodoItem(todo));
+            });
+        });
+    }
+
+    // ✅ 할 일 추가
+    function addTodo(event) {
+        event.preventDefault();
+        let newTodoTitle = $("#new-todo").val();
+
+        $.ajax({
+            type: "POST",
+            url: "/api/todos",
+            contentType: "application/json",
+            data: JSON.stringify({ title: newTodoTitle, completed: false }),
+            success: function(todo) {
+                $("#todo-list").append(renderTodoItem(todo));
+                $("#new-todo").val("");
+            }
+        });
+    }
+
+    // ✅ 할 일 수정
+    function updateTodo(id) {
+        let newTitle = $("#edit-" + id).val();
+
+        $.ajax({
+            type: "PUT",
+            url: `/api/todos/${id}`,
+            contentType: "application/json",
+            data: JSON.stringify({ title: newTitle }),
+            success: function () {
+                $("#title-" + id).text(newTitle).show();
+                $("#edit-" + id).hide();
+                $(".edit-btn[data-id='" + id + "']").show(); // 수정 버튼 다시 표시
+                $(".save-btn[data-id='" + id + "']").hide(); // 체크 버튼 숨김
+            }
+        });
+    }
+
+    // ✅ 수정 버튼 클릭 시 (체크 버튼 표시)
+    function enableEdit(id) {
+        $("#title-" + id).hide();
+        $("#edit-" + id).show().focus();
+        $(".edit-btn[data-id='" + id + "']").hide();
+        $(".save-btn[data-id='" + id + "']").show(); // 체크 버튼 표시
+    }
+
+    // ✅ 할 일 토글 (완료/미완료 변경)
+    function toggleTodo(id) {
+        $.ajax({
+            type: "PATCH",
+            url: `/api/todos/${id}/toggle`,
+            success: function(todo) {
+                $("#title-" + id).toggleClass("completed", todo.completed);
+            }
+        });
+    }
+
+    // ✅ 할 일 삭제
+    function deleteTodo(id) {
+        $.ajax({
+            type: "DELETE",
+            url: `/api/todos/${id}`,
+            success: function() {
+                $("#todo-" + id).remove();
+            }
+        });
+    }
+
+    // ✅ 할 일 목록 렌더링 (체크 버튼 기본 숨김)
+    function renderTodoItem(todo) {
+        return `
+            <li id="todo-${todo.id}" class="list-group-item d-flex justify-content-between align-items-center">
+                <div class="d-flex align-items-center">
+                    <input class="form-check-input me-2" type="checkbox" ${todo.completed ? "checked" : ""} onclick="toggleTodo(${todo.id})" />
+                    <span id="title-${todo.id}" class="${todo.completed ? "completed" : ""}">${todo.title}</span>
+                    <input type="text" id="edit-${todo.id}" class="edit-input form-control form-control-sm" value="${todo.title}" style="display:none;">
+                </div>
+                <div>
+                    <i class="fas fa-edit text-success me-3 edit-btn" data-id="${todo.id}" onclick="enableEdit(${todo.id})"></i>
+                    <i class="fas fa-check text-primary me-3 save-btn" data-id="${todo.id}" onclick="updateTodo(${todo.id})" style="display: none;"></i>
+                    <i class="fas fa-times text-danger" onclick="deleteTodo(${todo.id})"></i>
+                </div>
+            </li>
+        `;
+    }
+</script>
+
+</body>
+</html>
