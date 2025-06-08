@@ -13,6 +13,7 @@ import org.springframework.http.MediaType;
 
 import java.time.LocalDate;
 
+import static org.hamcrest.Matchers.hasSize;
 import static org.junit.jupiter.api.Assertions.*;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
@@ -143,6 +144,80 @@ class TodoRestControllerTest {
         // 삭제 요청
         mockMvc.perform(delete("/api/todos/" + id))
                 .andExpect(status().isNoContent());
+    }
+
+    @Test
+    void addTodo_overwrite_기능확인() throws Exception {
+        LocalDate date = LocalDate.now();
+
+        // 첫번째 할 일 추가
+        AddTodoRequestDto firstRequest = new AddTodoRequestDto();
+        firstRequest.setDate(date);
+        firstRequest.setTitle("First Todo");
+        firstRequest.setOverwrite(false);
+
+        mockMvc.perform(post("/api/todos")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(firstRequest)))
+                .andExpect(status().isOk());
+
+        // 두번째 할 일 추가 with overwrite
+        AddTodoRequestDto overwriteRequest = new AddTodoRequestDto();
+        overwriteRequest.setDate(date);
+        overwriteRequest.setTitle("Overwritten Todo");
+        overwriteRequest.setOverwrite(true);
+
+        mockMvc.perform(post("/api/todos")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(overwriteRequest)))
+                .andExpect(status().isOk());
+
+        // 조회 시 "Overwritten"만 있어야 함
+        mockMvc.perform(get("/api/todos")
+                        .param("date", date.toString()))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$", hasSize(1)))
+                .andExpect(jsonPath("$[0].title").value("Overwritten Todo"));
+    }
+
+
+    @Test
+    void updateTodo_없는아이디_404() throws Exception {
+        UpdateRequestDto updateRequest = new UpdateRequestDto();
+        updateRequest.setTitle("New title");
+
+        mockMvc.perform(put("/api/todos/99999")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(updateRequest)))
+                .andExpect(status().isNotFound());
+    }
+
+    @Test
+    void deleteTodo_없는아이디_404() throws Exception {
+        mockMvc.perform(delete("/api/todos/99999"))
+                .andExpect(status().isNotFound());
+    }
+
+    @Test
+    void toggleTodo_없는아이디_404() throws Exception {
+        mockMvc.perform(patch("/api/todos/99999/toggle"))
+                .andExpect(status().isNotFound());
+    }
+
+    @Test
+    void addTodo_필수값누락_400() throws Exception {
+        // date 누락
+        String invalidRequest = """
+            {
+                "title": "Invalid Todo",
+                "overwrite": false
+            }
+            """;
+
+        mockMvc.perform(post("/api/todos")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(invalidRequest))
+                .andExpect(status().isBadRequest());
     }
 
 }

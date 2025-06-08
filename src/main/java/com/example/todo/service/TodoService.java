@@ -53,6 +53,9 @@ public class TodoService {
     }
 
     public void deleteTodo(Long id) {
+        if (!todoRepository.existsById(id)) {
+            throw new IllegalArgumentException("삭제할 할 일을 찾을 수 없습니다. ID: " + id);
+        }
         todoRepository.deleteById(id);
     }
 
@@ -69,6 +72,7 @@ public class TodoService {
     }
 
     public Long addTodo(AddTodoRequestDto requestDto) {
+
         if (requestDto.isOverwrite()) {
             List<Todo> existingTodos = todoRepository.findByDate(requestDto.getDate());
             todoRepository.deleteAll(existingTodos);

@@ -12,6 +12,7 @@ import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.tags.Tag;
+import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -57,6 +58,7 @@ public class TodoRestController {
     })
     @PostMapping
     public ResponseEntity<CreateTodoResponseDto> addTodo(
+            @Valid
             @io.swagger.v3.oas.annotations.parameters.RequestBody(
                     description = "등록할 할 일 정보",
                     required = true,
