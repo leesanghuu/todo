@@ -1,192 +1,122 @@
 package com.example.todo.service;
 
+import com.example.todo.dto.AddTodoRequestDto;
+import com.example.todo.dto.TodoResponseDto;
+import com.example.todo.dto.UpdateRequestDto;
 import com.example.todo.entity.Todo;
 import com.example.todo.repository.TodoRepository;
 import org.junit.jupiter.api.Test;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.test.context.SpringBootTest;
-import org.springframework.transaction.annotation.Transactional;
+import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.InjectMocks;
+import org.mockito.Mock;
+import org.mockito.junit.jupiter.MockitoExtension;
 
+import java.time.LocalDate;
 import java.util.List;
 import java.util.Optional;
 
 import static org.junit.jupiter.api.Assertions.*;
+import static org.mockito.Mockito.*;
 
-@SpringBootTest
-@Transactional // 테스트 후 데이터 롤백(테스트 종료 후 DB 변경 사항 자동 제거)
+@ExtendWith(MockitoExtension.class)
 class TodoServiceTest {
-
-    @Autowired
-    private TodoService todoService;
-    @Autowired
+    @Mock
     private TodoRepository todoRepository;
 
-    /*
-    할 일 전체 조회 테스트
-     */
+    @InjectMocks
+    private TodoService todoService;
+
     @Test
-    void testGetAllTodos() {
-        //given (할 일 추가)
+    void addTodo_저장() {
+        // given
+        AddTodoRequestDto requestDto = new AddTodoRequestDto();
+        requestDto.setDate(LocalDate.of(2025, 6, 9));
+        requestDto.setTitle("테스트 할 일");
+        requestDto.setOverwrite(false);
+
+        // when
+        todoService.addTodo(requestDto);
+
+        // then
+        verify(todoRepository, times(1)).save(any(Todo.class));
+    }
+
+    @Test
+    void updateTodo_수정() {
+        // given
+        Long todoId = 1L;
+        Todo todo = new Todo();
+        todo.setId(todoId);
+        todo.setTitle("Old Title");
+
+        UpdateRequestDto requestDto = new UpdateRequestDto();
+        requestDto.setTitle("New Title");
+
+        when(todoRepository.findById(todoId)).thenReturn(Optional.of(todo));
+
+        // when
+        todoService.updateTodo(todoId, requestDto);
+
+        // then
+        assertEquals("New Title", todo.getTitle());
+    }
+
+    @Test
+    void toggleTodo_토글() {
+        // given
+        Long todoId = 1L;
+        Todo todo = new Todo();
+        todo.setId(todoId);
+        todo.setCompleted(false);
+
+        when(todoRepository.findById(todoId)).thenReturn(Optional.of(todo));
+
+        // when
+        todoService.toggleTodo(todoId);
+
+        // then
+        assertTrue(todo.isCompleted());
+    }
+
+    @Test
+    void rollOverUncompletedTodos_미완료넘기기() {
+        // given
+        LocalDate fromDate = LocalDate.of(2025, 6, 9);
+
         Todo todo1 = new Todo();
-        todo1.setTitle("할 일1");
+        todo1.setDate(fromDate);
         todo1.setCompleted(false);
 
-        Todo todo2 = new Todo();
-        todo2.setTitle("할 일2");
-        todo2.setCompleted(false);
+        List<Todo> uncompletedTodos = List.of(todo1);
 
-        todoService.saveTodo(todo1);
-        todoService.saveTodo(todo2);
+        when(todoRepository.findByDateAndCompletedFalse(fromDate, todo1.isCompleted())).thenReturn(uncompletedTodos);
 
-        //when (목록 조회)
-        List<Todo> todos = todoService.getAllTodos();
+        // when
+        todoService.rollOverUncompletedTodos(fromDate);
 
-        //then (데이터 검증)
-        assertEquals(2, todos.size());
-        assertEquals("할 일1", todos.get(0).getTitle());
-        assertEquals("할 일2", todos.get(1).getTitle());
+        // then
+        assertEquals(fromDate.plusDays(1), todo1.getDate());
     }
-    /*
-    할 일 추가 테스트
-     */
-    @Test
-    void testSaveTodo() {
-        //given (새로운 할 일)
-        Todo newTodo = new Todo();
-        newTodo.setTitle("테스트 할 일 추가");
-        newTodo.setCompleted(false);
 
-        //when (할 일 저장)
-        todoService.saveTodo(newTodo);
-
-        //then (저장된 데이터 검증)
-        List<Todo> todos = todoRepository.findAll();
-        assertEquals(1, todos.size());
-        assertEquals("테스트 할 일 추가", todos.get(0).getTitle());
-        assertFalse(todos.get(0).isCompleted());
-    }
-    /*
-    할 일 부분 조회(ID로 조회)
-     */
     @Test
-    void testGetTodoById() {
-        //given (할 일 추가)
+    void getTodosByDate_날짜별조회() {
+        // given
+        LocalDate date = LocalDate.of(2025, 6, 9);
+
         Todo todo = new Todo();
-        todo.setTitle("할 일 상세 조회");
+        todo.setId(1L);
+        todo.setDate(date);
+        todo.setTitle("할 일");
         todo.setCompleted(false);
-        todoService.saveTodo(todo);
-        Long todoId = todo.getId();
 
-        //when (ID로 조회)
-        Todo foundTodo = todoService.getTodoById(todoId);
+        when(todoRepository.findByDate(date)).thenReturn(List.of(todo));
 
-        //then (찾은 데이터 검증)
-        assertNotNull(foundTodo);
-        assertEquals("할 일 상세 조회", foundTodo.getTitle());
+        // when
+        List<TodoResponseDto> result = todoService.getTodosByDate(date);
+
+        // then
+        assertEquals(1, result.size());
+        assertEquals(todo.getTitle(), result.get(0).getTitle());
     }
-    /*
-    할 일 부분 조회 - 예외 테스트
-     */
-    @Test
-    void testGetTodoById_NotFound() {
-        //given (존재하지 않는 ID)
-        Long todoId = 999L;
-
-        //when, then (존재하지 않는 ID 조회 시도할 때 예외 발생 검증)
-        IllegalArgumentException e = assertThrows(IllegalArgumentException.class, () -> {
-            todoService.getTodoById(todoId);
-        });
-        assertEquals("해당 ID 없음: " + todoId, e.getMessage());
-    }
-    /*
-    할 일 수정 테스트
-     */
-    @Test
-    void testUpdateTodo() {
-        //given (할 일 추가)
-        Todo todo = new Todo();
-        todo.setTitle("수정 전 할 일");
-        todo.setCompleted(false);
-        todoRepository.save(todo);
-
-        Long todoId = todo.getId();
-
-        //when (제목 수정)
-        todoService.updateTodo(todoId, "수정된 할 일");
-
-        //then (검증)
-        Todo updateTodo = todoService.getTodoById(todoId);
-        assertEquals("수정된 할 일", updateTodo.getTitle());
-    }
-    /*
-    할 일 수정 - 예외 처리 테스트
-     */
-    @Test
-    void testUpdateTodo_NotFound() {
-        //given (존재하지 않는 ID)
-        Long todoId = 999L;
-
-        //when, then (존재하지 않는 ID의 투두 수정 - 예외 발생 검증)
-        IllegalArgumentException e = assertThrows(IllegalArgumentException.class, () -> {
-            todoService.updateTodo(todoId, "없는 할 일 수정");
-        });
-        assertEquals("해당 ID 없음: " + todoId, e.getMessage());
-    }
-    /*
-    할 일 완료 여부 테스트
-     */
-    @Test
-    void testToggleTodo() {
-        //given (할 일 추가)
-        Todo todo = new Todo();
-        todo.setTitle("완료 상태 변경");
-        todo.setCompleted(false);
-        todoRepository.save(todo);
-        Long todoId = todo.getId();
-
-        //when (완료 상태 변경)
-        todoService.toggleTodo(todoId);
-
-        //then (검증)
-        todoService.toggleTodo(todoId);
-        Todo toggleBackTodo = todoService.getTodoById(todoId);
-        assertFalse(toggleBackTodo.isCompleted());
-    }
-    /*
-    할 일 완료 여부 예외 테스트
-     */
-    @Test
-    void testToggleTodo_NotFound() {
-        //given (존재하지 않는 ID)
-        Long todoId = 999L;
-
-        //when, then (예외 발생 검증)
-        IllegalArgumentException e = assertThrows(IllegalArgumentException.class, () -> {
-            todoService.toggleTodo(todoId);
-        });
-        assertEquals("할 일을 찾을 수 없습니다. ID: " + todoId, e.getMessage());
-    }
-    /*
-    할 일 삭제 테스트
-     */
-    @Test
-    void testDeleteTodo() {
-        //given (할 일 추가)
-        Todo todo = new Todo();
-        todo.setTitle("삭제 테스트");
-        todo.setCompleted(false);
-        todoRepository.save(todo);
-
-        Long todoId = todo.getId();
-
-        //when (할 일 삭제)
-        todoService.deleteTodo(todoId);
-
-        //then (삭제 후 다시 조회 -> 데이터 없는거 확인)
-        Optional<Todo> deleteTodo = todoRepository.findById(todoId);
-        assertFalse(deleteTodo.isPresent());
-    }
-
-
-
+  
 }
