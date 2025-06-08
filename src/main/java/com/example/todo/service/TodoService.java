@@ -68,7 +68,7 @@ public class TodoService {
                 .toList();
     }
 
-    public void addTodo(AddTodoRequestDto requestDto) {
+    public Long addTodo(AddTodoRequestDto requestDto) {
         if (requestDto.isOverwrite()) {
             List<Todo> existingTodos = todoRepository.findByDate(requestDto.getDate());
             todoRepository.deleteAll(existingTodos);
@@ -79,12 +79,18 @@ public class TodoService {
         newTodo.setTitle(requestDto.getTitle());
         newTodo.setCompleted(false);
 
-        todoRepository.save(newTodo);
+        Todo saveTodo = todoRepository.save(newTodo);
+        return saveTodo.getId();
     }
 
     @Scheduled(cron = "0 0 0 * * *")
+    public void scheduledRollOverUncompletedTodos() {
+        rollOverUncompletedTodos(LocalDate.now().minusDays(1));
+    }
+
     public void rollOverUncompletedTodos(LocalDate fromDate) {
-        List<Todo> uncompletedTodos = todoRepository.findByDateAndCompletedFalse(fromDate, false);
+
+        List<Todo> uncompletedTodos = todoRepository.findByDateAndCompletedFalse(fromDate);
 
         for (Todo todo : uncompletedTodos) {
             todo.setDate(fromDate.plusDays(1));

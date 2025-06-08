@@ -89,7 +89,7 @@ class TodoServiceTest {
 
         List<Todo> uncompletedTodos = List.of(todo1);
 
-        when(todoRepository.findByDateAndCompletedFalse(fromDate, todo1.isCompleted())).thenReturn(uncompletedTodos);
+        when(todoRepository.findByDateAndCompletedFalse(fromDate)).thenReturn(uncompletedTodos);
 
         // when
         todoService.rollOverUncompletedTodos(fromDate);

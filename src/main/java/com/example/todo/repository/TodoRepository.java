@@ -16,5 +16,5 @@ public interface TodoRepository extends JpaRepository<Todo, Long> {
 
     List<Todo> findByDateBetween(LocalDate dateAfter, LocalDate dateBefore);
 
-    List<Todo> findByDateAndCompletedFalse(LocalDate date, boolean completed);
+    List<Todo> findByDateAndCompletedFalse(LocalDate date);
 }

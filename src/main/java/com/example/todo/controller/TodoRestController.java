@@ -1,6 +1,7 @@
 package com.example.todo.controller;
 
 import com.example.todo.dto.AddTodoRequestDto;
+import com.example.todo.dto.CreateTodoResponseDto;
 import com.example.todo.dto.TodoResponseDto;
 import com.example.todo.dto.UpdateRequestDto;
 import com.example.todo.entity.Todo;
@@ -55,8 +56,7 @@ public class TodoRestController {
             @ApiResponse(responseCode = "400", description = "잘못된 요청")
     })
     @PostMapping
-
-    public ResponseEntity<Void> addTodo(
+    public ResponseEntity<CreateTodoResponseDto> addTodo(
             @io.swagger.v3.oas.annotations.parameters.RequestBody(
                     description = "등록할 할 일 정보",
                     required = true,
@@ -65,8 +65,8 @@ public class TodoRestController {
             @RequestBody AddTodoRequestDto addTodoRequestDto
     ) {
 
-        todoService.addTodo(addTodoRequestDto);
-        return ResponseEntity.ok().build();
+        Long todoId = todoService.addTodo(addTodoRequestDto);
+        return ResponseEntity.ok(new CreateTodoResponseDto(todoId));
     }
 
     // 할 일 수정 (PUT /api/todos/{id})
