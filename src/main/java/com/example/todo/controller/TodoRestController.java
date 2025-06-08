@@ -2,15 +2,22 @@ package com.example.todo.controller;
 
 import com.example.todo.entity.Todo;
 import com.example.todo.service.TodoService;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.media.Content;
+import io.swagger.v3.oas.annotations.media.Schema;
+import io.swagger.v3.oas.annotations.responses.ApiResponse;
+import io.swagger.v3.oas.annotations.responses.ApiResponses;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
 
+@Tag(name = "Todo API", description = "할 일 관리 API")
 @RestController // REST API 컨트롤러
 @RequestMapping("/api/todos")
-@RequiredArgsConstructor // 생성자 자동 생성 -> DI
+@RequiredArgsConstructor// 생성자 자동 생성 -> DI
 public class TodoRestController {
     private final TodoService todoService;
 
@@ -21,8 +28,24 @@ public class TodoRestController {
     }
 
     // 새로운 할 일 추가 (POST /api/todos)
+    @Operation(
+            summary = "할 일 추가",
+            description = "새로운 할 일을 등록합니다."
+    )
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "등록 성공",
+            content = @Content(schema = @Schema(implementation = Todo.class))),
+            @ApiResponse(responseCode = "400", description = "잘못된 요청")
+    })
     @PostMapping
-    public ResponseEntity<Todo> addTodo(@RequestBody Todo todo) {
+    public ResponseEntity<Todo> addTodo(
+            @io.swagger.v3.oas.annotations.parameters.RequestBody(
+                    description = "등록할 할 일 정보",
+                    required = true,
+                    content = @Content(schema = @Schema(implementation = Todo.class))
+            )
+            @RequestBody Todo todo
+    ) {
         todoService.saveTodo(todo);
         return ResponseEntity.ok(todo);
     }
