@@ -3,7 +3,10 @@ package com.example.todo.entity;
 import jakarta.persistence.*;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
+import lombok.RequiredArgsConstructor;
 import lombok.Setter;
+
+import java.time.LocalDate;
 
 @Entity
 @Getter
@@ -20,4 +23,7 @@ public class Todo {
     private String title;
 
     private boolean completed = false;
+
+    @Column(nullable = false)
+    private LocalDate date;
 }
