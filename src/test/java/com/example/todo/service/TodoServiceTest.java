@@ -4,7 +4,9 @@ import com.example.todo.dto.AddTodoRequestDto;
 import com.example.todo.dto.TodoResponseDto;
 import com.example.todo.dto.UpdateRequestDto;
 import com.example.todo.entity.Todo;
+import com.example.todo.jwt.UserContextHolder;
 import com.example.todo.repository.TodoRepository;
+import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
@@ -26,13 +28,27 @@ class TodoServiceTest {
     @InjectMocks
     private TodoService todoService;
 
+    @AfterEach
+    void tearDown() {
+        UserContextHolder.clear();
+    }
+
     @Test
     void addTodo_저장() {
         // given
+        String userIdentifier = "testUser";
+        UserContextHolder.setUserIdentifier(userIdentifier);
+
         AddTodoRequestDto requestDto = new AddTodoRequestDto();
         requestDto.setDate(LocalDate.of(2025, 6, 9));
         requestDto.setTitle("테스트 할 일");
         requestDto.setOverwrite(false);
+
+        Todo savedTodo = new Todo();
+        savedTodo.setId(1L);
+        savedTodo.setUserIdentifier(userIdentifier);
+
+        when(todoRepository.save(any(Todo.class))).thenReturn(savedTodo);
 
         // when
         todoService.addTodo(requestDto);
@@ -44,10 +60,14 @@ class TodoServiceTest {
     @Test
     void updateTodo_수정() {
         // given
+        String userIdentifier = "testUser";
+        UserContextHolder.setUserIdentifier(userIdentifier);
+
         Long todoId = 1L;
         Todo todo = new Todo();
         todo.setId(todoId);
         todo.setTitle("Old Title");
+        todo.setUserIdentifier(userIdentifier);
 
         UpdateRequestDto requestDto = new UpdateRequestDto();
         requestDto.setTitle("New Title");
@@ -64,10 +84,14 @@ class TodoServiceTest {
     @Test
     void toggleTodo_토글() {
         // given
+        String userIdentifier = "testUser";
+        UserContextHolder.setUserIdentifier(userIdentifier);
+
         Long todoId = 1L;
         Todo todo = new Todo();
         todo.setId(todoId);
         todo.setCompleted(false);
+        todo.setUserIdentifier(userIdentifier);
 
         when(todoRepository.findById(todoId)).thenReturn(Optional.of(todo));
 
@@ -101,6 +125,9 @@ class TodoServiceTest {
     @Test
     void getTodosByDate_날짜별조회() {
         // given
+        String userIdentifier = "testUser";
+        UserContextHolder.setUserIdentifier(userIdentifier);
+
         LocalDate date = LocalDate.of(2025, 6, 9);
 
         Todo todo = new Todo();
@@ -109,7 +136,7 @@ class TodoServiceTest {
         todo.setTitle("할 일");
         todo.setCompleted(false);
 
-        when(todoRepository.findByDate(date)).thenReturn(List.of(todo));
+        when(todoRepository.findByUserIdentifierAndDate(userIdentifier, date)).thenReturn(List.of(todo));
 
         // when
         List<TodoResponseDto> result = todoService.getTodosByDate(date);

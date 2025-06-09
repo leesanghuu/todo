@@ -1,13 +1,13 @@
 package com.example.todo.dto;
 
 import com.example.todo.entity.Todo;
-import lombok.AllArgsConstructor;
 import lombok.Getter;
+import lombok.Setter;
 
 import java.time.LocalDate;
 
 @Getter
-@AllArgsConstructor
+@Setter
 public class TodoResponseDto {
 
     private Long id;
@@ -16,11 +16,11 @@ public class TodoResponseDto {
     private LocalDate date;
 
     public static TodoResponseDto fromEntity(Todo todo) {
-        return new TodoResponseDto(
-                todo.getId(),
-                todo.getTitle(),
-                todo.isCompleted(),
-                todo.getDate()
-        );
+        TodoResponseDto dto = new TodoResponseDto();
+        dto.setId(todo.getId());
+        dto.setTitle(todo.getTitle());
+        dto.setCompleted(todo.isCompleted());
+        dto.setDate(todo.getDate());
+        return dto;
     }
 }
