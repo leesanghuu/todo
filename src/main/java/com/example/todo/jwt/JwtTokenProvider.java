@@ -29,7 +29,6 @@ public class JwtTokenProvider {
 
     // Refresh Token 발급
     public String createRefreshToken(String userIdentifier) {
-        Claims claims = Jwts.claims().setSubject(userIdentifier);
 
         Date now = new Date();
         Date validity = new Date(now.getTime() + 14L * 24 * 60 * 60 * 1000L); // 14일
