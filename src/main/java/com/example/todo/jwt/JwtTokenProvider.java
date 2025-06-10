@@ -11,12 +11,12 @@ import java.util.Date;
 public class JwtTokenProvider {
 
     private final Key key = Keys.secretKeyFor(SignatureAlgorithm.HS256); // 서버에서 관리하는 secret key
-    private final long tokenValidityInMilliSeconds = 1000L * 60 * 60 * 24 * 30; // 만료기간 30일
+    private final long tokenValidity = 1000L * 60 * 30; // 만료기간 30분
 
     // JWT 생성
     public String createToken(String userIdentifier) {
         Date now = new Date();
-        Date validity = new Date(now.getTime() + tokenValidityInMilliSeconds);
+        Date validity = new Date(now.getTime() + tokenValidity);
 
         return Jwts.builder()
                 .setSubject("user") // 고정 subject
@@ -24,6 +24,21 @@ public class JwtTokenProvider {
                 .setIssuedAt(now)
                 .setExpiration(validity)
                 .signWith(key)
+                .compact();
+    }
+
+    // Refresh Token 발급
+    public String createRefreshToken(String userIdentifier) {
+        Claims claims = Jwts.claims().setSubject(userIdentifier);
+
+        Date now = new Date();
+        Date validity = new Date(now.getTime() + 14L * 24 * 60 * 60 * 1000L); // 14일
+
+        return Jwts.builder()
+                .setClaims(claims)
+                .setIssuedAt(now)
+                .setExpiration(validity)
+                .signWith(key, SignatureAlgorithm.HS256)
                 .compact();
     }
 

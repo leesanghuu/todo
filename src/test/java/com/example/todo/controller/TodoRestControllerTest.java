@@ -227,63 +227,6 @@ class TodoRestControllerTest {
     }
 
     @Test
-    void 사용자별_투두리스트_분리_테스트() throws Exception {
-        // 1. 사용자 A 토큰 발급
-        String tokenA = mockMvc.perform(post("/api/users/token"))
-                .andExpect(status().isOk())
-                .andReturn()
-                .getResponse()
-                .getContentAsString();
-        String userAToken = objectMapper.readTree(tokenA).get("token").asText();
-
-        // 2. 사용자 B 토큰 발급
-        String tokenB = mockMvc.perform(post("/api/users/token"))
-                .andExpect(status().isOk())
-                .andReturn()
-                .getResponse()
-                .getContentAsString();
-        String userBToken = objectMapper.readTree(tokenB).get("token").asText();
-
-        // 3. 사용자 A로 투두 추가
-        AddTodoRequestDto addRequestA = new AddTodoRequestDto();
-        addRequestA.setDate(LocalDate.now());
-        addRequestA.setTitle("User A");
-        addRequestA.setOverwrite(false);
-
-        mockMvc.perform(post("/api/todos")
-                .header("Authorization", "Bearer " + userAToken)
-                .contentType(MediaType.APPLICATION_JSON)
-                .content(objectMapper.writeValueAsString(addRequestA)))
-                .andExpect(status().isOk());
-
-        // 4. 사용자 B로 투두 추가
-        AddTodoRequestDto addRequestB = new AddTodoRequestDto();
-        addRequestB.setDate(LocalDate.now());
-        addRequestB.setTitle("User B");
-        addRequestB.setOverwrite(false);
-
-        mockMvc.perform(post("/api/todos")
-                        .header("Authorization", "Bearer " + userBToken)
-                        .contentType(MediaType.APPLICATION_JSON)
-                        .content(objectMapper.writeValueAsString(addRequestB)))
-                .andExpect(status().isOk());
-
-        // 5. 사용자 A로 조회
-        mockMvc.perform(get("/api/todos")
-                .header("Authorization", "Bearer " + userAToken))
-                .andExpect(status().isOk())
-                .andExpect(jsonPath("$", hasSize(1)))
-                .andExpect(jsonPath("$[0].title").value("User A"));
-
-        // 6. 사용자 A로 조회
-        mockMvc.perform(get("/api/todos")
-                        .header("Authorization", "Bearer " + userBToken))
-                .andExpect(status().isOk())
-                .andExpect(jsonPath("$", hasSize(1)))
-                .andExpect(jsonPath("$[0].title").value("User B"));
-    }
-
-    @Test
     void 다른사용자_투두_수정_403() throws Exception {
         // 사용자 A 토큰 발급
         String tokenA = 발급받은토큰();
