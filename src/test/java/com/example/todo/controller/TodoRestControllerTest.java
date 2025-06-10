@@ -285,7 +285,7 @@ class TodoRestControllerTest {
                 .andReturn()
                 .getResponse()
                 .getContentAsString();
-        return objectMapper.readTree(tokenResponse).get("token").asText();
+        return objectMapper.readTree(tokenResponse).get("accessToken").asText();
     }
 
     private long 추가하고Id반환(String token, String title) throws Exception {

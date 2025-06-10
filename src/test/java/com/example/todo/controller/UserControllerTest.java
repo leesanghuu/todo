@@ -2,13 +2,16 @@ package com.example.todo.controller;
 
 import com.example.todo.dto.AddTodoRequestDto;
 import com.example.todo.dto.RefreshRequestDto;
+import com.example.todo.repository.TodoRepository;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.http.MediaType;
 import org.springframework.test.web.servlet.MockMvc;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDate;
 
@@ -20,6 +23,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 
 @SpringBootTest
 @AutoConfigureMockMvc
+@Transactional
 class UserControllerTest {
 
     @Autowired
@@ -27,6 +31,14 @@ class UserControllerTest {
 
     @Autowired
     private ObjectMapper objectMapper;
+
+    @Autowired
+    private TodoRepository todoRepository;
+
+    @BeforeEach
+    void cleanUp() {
+        todoRepository.deleteAll();
+    }
 
     @Test
     void token_정상발급() throws Exception {

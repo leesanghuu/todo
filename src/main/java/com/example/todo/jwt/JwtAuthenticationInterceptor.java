@@ -22,8 +22,10 @@ public class JwtAuthenticationInterceptor implements HandlerInterceptor {
 
             if (jwtTokenProvider.validateToken(token)) {
                 String userIdentifier = jwtTokenProvider.getUserIdentifier(token);
+                System.out.println(">>> Setting user identifier: " + userIdentifier);
                 UserContextHolder.setUserIdentifier(userIdentifier);
             } else {
+                System.out.println(">>> Invalid token: " + token);
                 response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
                 return false; // 유효하지 않은 토큰 거절
             }

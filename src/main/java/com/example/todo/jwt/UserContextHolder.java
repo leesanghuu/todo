@@ -15,7 +15,7 @@ public class UserContextHolder {
         if (userIdentifier == null) {
             throw new AccessDeniedException("인증되지 않은 사용자입니다.");
         }
-        return userIdentifierHolder.get();
+        return userIdentifier;
     }
 
     public static void clear() {

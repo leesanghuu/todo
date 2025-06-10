@@ -35,10 +35,11 @@ public class JwtTokenProvider {
         Date validity = new Date(now.getTime() + 14L * 24 * 60 * 60 * 1000L); // 14일
 
         return Jwts.builder()
-                .setClaims(claims)
+                .setSubject("user")
+                .claim("userIdentifier", userIdentifier)
                 .setIssuedAt(now)
                 .setExpiration(validity)
-                .signWith(key, SignatureAlgorithm.HS256)
+                .signWith(key)
                 .compact();
     }
 
