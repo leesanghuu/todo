@@ -19,11 +19,11 @@ public class JwtTokenProvider {
         Date validity = new Date(now.getTime() + tokenValidity);
 
         return Jwts.builder()
-                .setSubject("user") // 고정 subject
+                .setSubject("user") // 고정 subject: 사용자 식별자값
                 .claim("userIdentifier", userIdentifier) // Payload에 userIdentifier 포함
-                .setIssuedAt(now)
-                .setExpiration(validity)
-                .signWith(key)
+                .setIssuedAt(now) // 발급일
+                .setExpiration(validity) // 만료 기간
+                .signWith(key) // 서명 및 암호화
                 .compact();
     }
 
