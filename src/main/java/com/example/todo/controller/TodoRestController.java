@@ -19,6 +19,7 @@ import org.springframework.web.bind.annotation.*;
 
 import java.time.LocalDate;
 import java.util.List;
+import java.util.Map;
 
 @Tag(name = "Todo API", description = "할 일 관리 API")
 @RestController // REST API 컨트롤러
@@ -47,6 +48,12 @@ public class TodoRestController {
         return ResponseEntity.ok(todoService.getTodosBetweenDates(startDate, endDate));
     }
 
+    // 날짜별 조회 (GET /api/todos/grouped)
+    @GetMapping("/grouped")
+    public Map<LocalDate, List<TodoResponseDto>> getTodosGrouped() {
+        return todoService.getTodosGroupedByDate();
+    }
+
     // 새로운 할 일 추가 (POST /api/todos)
     @Operation(
             summary = "할 일 추가",
@@ -73,9 +80,9 @@ public class TodoRestController {
 
     // 할 일 수정 (PUT /api/todos/{id})
     @PutMapping("/{id}") // PUT: 전체 필드 수정
-    public ResponseEntity<String> updateTodo(@PathVariable Long id, @RequestBody UpdateRequestDto requestDto) {
-        todoService.updateTodo(id, requestDto);
-        return ResponseEntity.ok("success");
+    public ResponseEntity<TodoResponseDto> updateTodo(@PathVariable Long id, @RequestBody UpdateRequestDto requestDto) {
+        TodoResponseDto updatedDto = todoService.updateTodo(id, requestDto);
+        return ResponseEntity.ok(updatedDto);
     }
 
     // 할 일 완료 상태 변경 (PATCH /api/todos/{id}/toggle)

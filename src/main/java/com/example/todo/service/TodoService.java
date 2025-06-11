@@ -14,6 +14,8 @@ import org.springframework.stereotype.Service;
 
 import java.time.LocalDate;
 import java.util.List;
+import java.util.Map;
+import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
@@ -34,14 +36,16 @@ public class TodoService {
         return TodoResponseDto.fromEntity(todo);
     }
 
-    public void updateTodo(Long id, UpdateRequestDto requestDto) {
+    public TodoResponseDto updateTodo(Long id, UpdateRequestDto requestDto) {
         Todo todo = getAuthorizedTodo(id);
 
         // title이 null이 아닐 경우 변경
         if (requestDto.getTitle() != null) {
             todo.setTitle(requestDto.getTitle());
         }
-        todoRepository.save(todo);
+        Todo updatedTodo = todoRepository.save(todo);
+
+        return TodoResponseDto.fromEntity(updatedTodo);
     }
 
     public void saveTodo(Todo todo) {
@@ -72,6 +76,18 @@ public class TodoService {
         return todoRepository.findByUserIdentifierAndDateBetween(userIdentifier, startDate, endDate).stream()
                 .map(TodoResponseDto::fromEntity)
                 .toList();
+    }
+
+    public Map<LocalDate, List<TodoResponseDto>> getTodosGroupedByDate() {
+        String userIdentifier = UserContextHolder.getUserIdentifier();
+
+        List<Todo> todos = todoRepository.findByUserIdentifier(userIdentifier);
+
+        return todos.stream()
+                .collect(Collectors.groupingBy(
+                        Todo::getDate,
+                        Collectors.mapping(TodoResponseDto::fromEntity, Collectors.toList())
+                ));
     }
 
     public Long addTodo(AddTodoRequestDto requestDto) {

@@ -8,6 +8,6 @@ public class TodoViewController {
 
     @GetMapping("/todos")
     public String showTodoList() {
-        return "todo-list-api";
+        return "forward:/todo-list.html";
     }
 }

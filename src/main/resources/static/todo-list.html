@@ -1,0 +1,368 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>📌 Todo List </title>
+    <meta charset="UTF-8">
+
+    <!-- Bootstrap CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <!-- Font Awesome -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/all.min.css">
+    <!-- Flatpickr CSS -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css">
+    <!-- jQuery -->
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <!-- Bootstrap JS (Modal 사용) -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <!-- Flatpickr JS -->
+    <script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
+
+    <style>
+        body {
+            background-color: #e9d8df; /* light purple background */
+        }
+
+        .container {
+            background-color: #fff;
+            padding: 30px;
+            border-radius: 15px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+        }
+
+        .date-block {
+            border: 1px solid #ccc;
+            border-radius: 10px;
+            padding: 15px;
+            margin-bottom: 20px;
+            background-color: #f9f9f9;
+            box-shadow: 0 2px 6px rgba(0,0,0,0.05);
+        }
+
+        .date-header {
+            font-weight: bold;
+            font-size: 1.2rem;
+            margin-bottom: 15px;
+            padding-bottom: 5px;
+            border-bottom: 1px solid #ddd;
+        }
+
+        .todo-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 8px 0;
+            border-bottom: 1px solid #eee;
+        }
+
+        .todo-item:last-child {
+            border-bottom: none;
+        }
+
+        .todo-item button {
+            border: none;
+            background: none;
+            cursor: pointer;
+            margin-left: 5px;
+            font-size: 1rem;
+        }
+
+        .todo-item .edit-btn {
+            color: #28a745; /* green */
+        }
+
+        .todo-item .delete-btn {
+            color: #dc3545; /* red */
+        }
+
+        .completed {
+            text-decoration: line-through;
+            color: gray;
+        }
+
+        .add-todo-form {
+            margin-top: 10px;
+        }
+
+        .add-block {
+            border: 2px dashed #aaa;
+            border-radius: 10px;
+            padding: 30px;
+            text-align: center;
+            font-size: 2rem;
+            cursor: pointer;
+            color: #777;
+            display: block;
+        }
+
+        .flatpickr-calendar {
+            margin: 0 auto;
+            transform: scale(0.9);
+            transform-origin: top center;
+            margin-bottom: 15px;
+        }
+
+    </style>
+</head>
+<body class="bg-light">
+
+<div class="container py-4">
+
+    <h2 class="text-center mb-4">📌 Todo List</h2>
+
+    <div id="todo-container"></div>
+
+    <!-- 중앙 Add 블럭 (항상 표시) -->
+    <div id="empty-add-block" class="add-block" onclick="showAddModal()">
+        +
+    </div>
+
+</div>
+
+<!-- Modal -->
+<div class="modal fade" id="addTodoModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <form id="add-todo-form">
+                <div class="modal-header">
+                    <h5 class="modal-title">Add Todo</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <label class="form-label">Select Date:</label>
+                    <div id="calendar" class="mb-2"></div>
+                    <input type="text" id="todo-title" class="form-control mb-2" placeholder="Title" required>
+                    <div class="form-check">
+                        <input class="form-check-input" type="checkbox" id="overwrite">
+                        <label class="form-check-label" for="overwrite">Overwrite if exists</label>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="submit" class="btn btn-primary">Add</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<script>
+
+    // 1️⃣ 모든 API 요청에 Authorization 헤더 자동 추가
+    $.ajaxPrefilter(function (options, originalOptions, jqXHR) {
+        const token = localStorage.getItem("jwtToken");
+        if (token) {
+            jqXHR.setRequestHeader("Authorization", "Bearer " + token);
+        }
+    });
+
+    // 2️⃣ JWT 토큰 발급 → 저장 → loadTodos() 호출
+    function issueToken() {
+        $.ajax({
+            type: "POST",
+            url: "/api/users/token",
+            success: function(response) {
+                const token = response.accessToken;
+                localStorage.setItem("jwtToken", token);
+
+                console.log("Token saved:", token);
+
+                // 토큰 저장 후 바로 투두 리스트 로드
+                loadTodos();
+            },
+            error: function() {
+                alert("Token 발급 실패");
+            }
+        });
+    }
+
+    // Define selectedDate for calendar
+    let selectedDate = flatpickr.formatDate(new Date(), "Y-m-d");
+
+    $(document).ready(function () {
+        issueToken();
+    });
+
+    function loadTodos() {
+        $.get("/api/todos/grouped", function (data) {
+            const sortedDates = Object.keys(data).sort((a, b) => new Date(a) - new Date(b));
+            $("#todo-container").empty();
+
+            for (let date of sortedDates) {
+                const todos = data[date];
+                if (todos.length === 0) continue;
+                const block = $(`
+                    <div class="date-block" data-date="${date}">
+                        <div class="date-header">${date}</div>
+                        <div class="todo-list"></div>
+                        <div class="add-todo-btn text-center mt-2">
+                            <button class="btn btn-outline-primary btn-sm">+</button>
+                        </div>
+                        <form class="add-todo-form d-none">
+                            <input type="text" class="form-control form-control-sm mb-2 new-todo-title" placeholder="Title" required>
+                            <button type="submit" class="btn btn-primary btn-sm add-btn">Add</button>
+                        </form>
+                    </div>
+                `);
+
+                todos.forEach(todo => {
+                    block.find(".todo-list").append(renderTodoItem(todo));
+                });
+
+                block.find(".add-todo-btn button").click(function () {
+                    block.find(".add-todo-form").toggleClass("d-none");
+                });
+
+                block.find(".add-todo-form").off("submit").on("submit", function(e) {
+                    e.preventDefault();
+                    const addForm = $(this);
+                    const title = addForm.find(".new-todo-title").val();
+                    const dateVal = block.attr("data-date");
+
+                    $.ajax({
+                        type: "POST",
+                        url: "/api/todos",
+                        contentType: "application/json",
+                        data: JSON.stringify({ title: title, completed: false, date: dateVal }),
+                        success: function (todo) {
+                            loadTodos();
+                        }
+                    });
+                });
+
+                $("#todo-container").append(block);
+            }
+        });
+    }
+
+    function renderTodoItem(todo) {
+        return `
+            <div class="todo-item" id="todo-${todo.id}">
+                <div>
+                    <input type="checkbox" ${todo.completed ? "checked" : ""} onclick="toggleTodo(${todo.id})">
+                    <span class="${todo.completed ? "completed" : ""} todo-title">${todo.title}</span>
+                    <input type="text" class="form-control form-control-sm edit-input d-none" value="${todo.title}" style="width: auto; display: inline-block;">
+                </div>
+                <div>
+                    <button class="edit-btn" onclick="toggleEditMode(${todo.id}, this)"><i class="fas fa-pen-to-square"></i></button>
+                    <button class="delete-btn" onclick="deleteTodo(${todo.id})"><i class="fas fa-times"></i></button>
+                </div>
+            </div>
+        `;
+    }
+
+    function toggleTodo(id) {
+        $.ajax({
+            type: "PATCH",
+            url: `/api/todos/${id}/toggle`,
+            success: function (todo) {
+                const item = $(`#todo-${id}`);
+                item.find("span").toggleClass("completed", todo.completed);
+                item.find("input[type='checkbox']").prop("checked", todo.completed);
+            }
+        });
+    }
+
+    function deleteTodo(id) {
+        $.ajax({
+            type: "DELETE",
+            url: `/api/todos/${id}`,
+            success: function () {
+                const item = $(`#todo-${id}`);
+                const todoList = item.closest(".todo-list");
+
+                item.remove();
+
+                if (todoList.children(".todo-item").length === 0) {
+                    todoList.closest(".date-block").remove();
+                }
+            }
+        });
+    }
+
+    function toggleEditMode(id, button) {
+        const item = $(`#todo-${id}`);
+        const span = item.find(".todo-title");
+        const input = item.find(".edit-input");
+        const isEditing = !input.hasClass("d-none");
+
+        if (isEditing) {
+            // Confirm mode: save changes
+            const newTitle = input.val();
+
+            $.ajax({
+                type: "PUT",
+                url: `/api/todos/${id}`,
+                contentType: "application/json",
+                data: JSON.stringify({ title: newTitle }),
+                success: function (updatedTodo) {
+                    span.text(updatedTodo.title);
+                    span.removeClass("d-none");
+                    input.addClass("d-none");
+                    $(button).html('<i class="fas fa-pen-to-square"></i>');
+                }
+            });
+        } else {
+            // Edit mode: show input
+            span.addClass("d-none");
+            input.removeClass("d-none").focus();
+            $(button).html('<i class="fas fa-check"></i>');
+
+            input.off("keydown").on("keydown", function (e) {
+                if (e.key === "Enter") {
+                    toggleEditMode(id, button);
+                }
+            });
+        }
+    }
+
+
+    // 중앙 Add 블럭 → 팝업 열기
+    function showAddModal() {
+        $("#todo-title").val("");
+        $("#overwrite").prop("checked", false);
+
+        selectedDate = flatpickr.formatDate(new Date(), "Y-m-d");
+
+        const calendarContainer = $("#calendar");
+        calendarContainer.empty();
+
+        flatpickr("#calendar", {
+            inline: true,
+            minDate: "today",
+            defaultDate: new Date(),
+            dateFormat: "Y-m-d",
+            onChange: function(selectedDates, dateStr, instance) {
+                selectedDate = dateStr;
+            }
+        });
+
+        $("#addTodoModal").modal("show");
+    }
+
+    // 팝업 Add submit
+    $("#add-todo-form").submit(function (event) {
+        event.preventDefault();
+
+        const title = $("#todo-title").val();
+        const overwrite = $("#overwrite").is(":checked");
+
+        $.ajax({
+            type: "POST",
+            url: "/api/todos",
+            contentType: "application/json",
+            data: JSON.stringify({
+                title: title,
+                completed: false,
+                date: selectedDate,
+                overwrite: overwrite
+            }),
+            success: function () {
+                $("#addTodoModal").modal("hide");
+                loadTodos();
+            }
+        });
+    });
+
+</script>
+
+</body>
+</html>
