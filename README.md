@@ -17,7 +17,7 @@ Spring Boot 기반으로 구현한 개인 프로젝트입니다.
 - 미완료 할일 자동 이월
 
 
-## 📌 기술 스택
+## 🛠️ 기술 스택
 
 - Backend
   - Java 17, Spring Boot, Spring Data JPA, MySQL
@@ -26,7 +26,7 @@ Spring Boot 기반으로 구현한 개인 프로젝트입니다.
   - AWS EC2 (Ubuntu), Nginx, RDS (MySQL), Git / GitHub
 
 
-## 📌 프로젝트 구조
+## 📁 프로젝트 구조
 
 ```
 com.example.todo
@@ -40,15 +40,15 @@ com.example.todo
 └── service                 # Service 로직 (AuthService, TodoService)
 ```
 
-## 📌 주요 API 
+## 📌 API 명세
 
 <img width="847" alt="스크린샷 2025-06-13 오전 5 22 16" src="https://github.com/user-attachments/assets/7a2128f6-dece-4167-852e-28df03d343d7" />
 
 
-## 🚀 개발하며 배운 점
+## 🚀 주요 설계 및 구현
 
-- **API 및 계층별 설계 최적화 경험**
-  - RESTful URI 설계 및 Swagger 기반 API 문서화 경험
+- **API 및 계층별 설계 최적화**
+  - RESTful URI 설계 및 Swagger 기반 API 문서화
   - DTO 도입 및 명확한 Request / Response 구조 적용
   - Service / Controller / Repository 계층 간 명확한 책임 분리
   - `RestControllerAdvice` 통한 전역 예외 처리 적용으로 응답 일관성 확보
@@ -57,13 +57,13 @@ com.example.todo
   - Interceptor 기반 인증 흐름 설계 및 ThreadLocal 활용한 사용자 정보 관리
   - JWT 토큰 발급/검증 직접 구현
 
-- **테스트 작성 경험**
+- **테스트 작성**
   - JUnit 5, Mockito 활용하여 서비스/컨트롤러 레이어 테스트 작성
-  - JWT 인증 포함 end-to-end 테스트 구성 및 예외 상황 테스트 경험
+  - JWT 인증 포함 end-to-end 테스트 구성 및 예외 상황 테스트 
 
-- **배포 경험**
+- **배포**
   - EC2 서버에 Gradle build 후 Spring Boot 프로젝트 배포
-  - Nginx reverse proxy 구성 경험
+  - Nginx reverse proxy 구성 
 
 
 ## 🔍 후속 학습 계획
