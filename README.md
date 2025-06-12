@@ -19,17 +19,11 @@ Spring Boot 기반으로 구현한 개인 프로젝트입니다.
 
 ## 📌 기술 스택
 
-#### Backend
-- **Java 17**
-- **Spring Boot**
-- **Spring Data JPA**
-- **MySQL (AWS RDS)**
+- Backend
+  - Java 17, Spring Boot, Spring Data JPA, MySQL
 
-#### Infra / DevOps
-- **AWS EC2 (Ubuntu)**
-- **Nginx**
-- **AWS RDS (MySQL)**
-- **Git / GitHub**
+- Infra / DevOps
+  - AWS EC2 (Ubuntu), Nginx, RDS (MySQL), Git / GitHub
 
 
 ## 📌 프로젝트 구조
@@ -51,33 +45,25 @@ com.example.todo
 <img width="847" alt="스크린샷 2025-06-13 오전 5 22 16" src="https://github.com/user-attachments/assets/7a2128f6-dece-4167-852e-28df03d343d7" />
 
 
-
 ## 🚀 개발하며 배운 점
 
-- **JWT 인증 플로우 구현 경험**
-  - JWT 토큰 발급/검증을 직접 구현하면서 HMAC 기반 알고리즘(HS256) 사용 경험
-  - Interceptor를 활용해 인증 흐름 설계 시 FilterChain과 HandlerInterceptor의 차이점 이해
-  - SecurityContextHolder 없이 ThreadLocal 기반 UserContextHolder 설계 및 적용 경험
+- **API 및 계층별 설계 최적화 경험**
+  - RESTful URI 설계 및 Swagger 기반 API 문서화 경험
+  - DTO 도입 및 명확한 Request / Response 구조 적용
+  - Service / Controller / Repository 계층 간 명확한 책임 분리
+  - `RestControllerAdvice` 통한 전역 예외 처리 적용으로 응답 일관성 확보
+ 
+- **JWT 인증 플로우 구현**
+  - Interceptor 기반 인증 흐름 설계 및 ThreadLocal 활용한 사용자 정보 관리
+  - JWT 토큰 발급/검증 직접 구현
 
-- **RESTful API 설계 원칙 적용**
-  - RESTful URI 설계 
-  - Swagger 적용 시 API 설계 개선 (DTO 별도 설계, 명확한 Response 형식 설계)
-
-- **계층별 설계와 테스트 가능성 고려**
-  - DTO ↔ Entity 변환 시 명시적 매핑 사용 → 의도 명확화
-  - `RestControllerAdvice` 적용을 통한 전역 예외 처리 경험
-  - 생성자 주입 방식 적용으로 테스트 용이성 확보
-
-- **테스트 작성**
-  - JUnit 5, Mockito, MockMvc 활용
-  - Service/Controller 레이어에서 각각 단위 테스트/API 테스트 구성 경험
-  - JWT 인증이 필요한 API 테스트 시, 토큰 발급부터 포함하여 end-to-end 흐름 테스트 구성
-  - 예외 상황과 경계 케이스(존재하지 않는 투두 접근 등) 테스트 경험
-  - 테스트 작성 경험을 통해 API 설계 오류 및 경계 케이스 개선
+- **테스트 작성 경험**
+  - JUnit 5, Mockito 활용하여 서비스/컨트롤러 레이어 테스트 작성
+  - JWT 인증 포함 end-to-end 테스트 구성 및 예외 상황 테스트 경험
 
 - **배포 경험**
-  - EC2 서버에 Spring Boot 프로젝트 배포 경험
-  - Gradle build 후 Jar 파일 실행 및 Nginx reverse proxy 구성 경험
+  - EC2 서버에 Gradle build 후 Spring Boot 프로젝트 배포
+  - Nginx reverse proxy 구성 경험
 
 
 ## 🔍 후속 학습 계획
