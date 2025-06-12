@@ -44,7 +44,13 @@ public class JwtTokenProvider {
 
     // JWT에서 userIdentifier 추출
     public String getUserIdentifier(String token) {
-        return parseClaims(token).getBody().get("userIdentifier", String.class);
+        Claims claims = parseClaims(token).getBody();
+
+        if (!claims.containsKey("userIdentifier")) {
+            throw new IllegalArgumentException("유효하지 않은 토큰입니다.");
+        }
+
+        return claims.get("userIdentifier", String.class);
     }
 
     // JWT 유효성 검증

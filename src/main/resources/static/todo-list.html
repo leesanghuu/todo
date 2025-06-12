@@ -146,11 +146,25 @@
 
 <script>
 
+    // AccessToken is stored only in memory
+    let accessToken = null; // AccessToken is stored only in memory
+    let isRefreshing = false;
+    let refreshSubscribers = [];
+
+
+    function subscribeTokenRefresh(cb) {
+        refreshSubscribers.push(cb);
+    }
+
+    function onRefreshed(newToken) {
+        refreshSubscribers.forEach(cb => cb(newToken));
+        refreshSubscribers = [];
+    }
+
     // 1️⃣ 모든 API 요청에 Authorization 헤더 자동 추가
     $.ajaxPrefilter(function (options, originalOptions, jqXHR) {
-        const token = localStorage.getItem("jwtToken");
-        if (token) {
-            jqXHR.setRequestHeader("Authorization", "Bearer " + token);
+        if (accessToken) {
+            jqXHR.setRequestHeader("Authorization", "Bearer " + accessToken);
         }
     });
 
@@ -159,13 +173,13 @@
         $.ajax({
             type: "POST",
             url: "/api/users/token",
+            xhrFields: {
+                withCredentials: true // Allow receiving RefreshToken via HttpOnly Cookie
+            },
             success: function(response) {
-                const token = response.accessToken;
-                localStorage.setItem("jwtToken", token);
+                accessToken = response.accessToken;
+                console.log("New AccessToken saved in memory:", accessToken);
 
-                console.log("Token saved:", token);
-
-                // 토큰 저장 후 바로 투두 리스트 로드
                 loadTodos();
             },
             error: function() {
@@ -174,11 +188,42 @@
         });
     }
 
+
+    function reissueTokenWithCallback(successCallback, errorCallback) {
+        $.ajax({
+            type: "POST",
+            url: "/api/users/reissue",
+            xhrFields: {
+                withCredentials: true
+            },
+            success: function(response) {
+                accessToken = response.accessToken;
+                console.log("Reissued AccessToken saved in memory:", accessToken);
+                if (successCallback) successCallback();
+            },
+            error: function() {
+                console.log("RefreshToken invalid or expired → cannot reissue AccessToken");
+                isRefreshing = false;
+                if (errorCallback) errorCallback();
+            }
+        });
+    }
+
     // Define selectedDate for calendar
     let selectedDate = flatpickr.formatDate(new Date(), "Y-m-d");
 
     $(document).ready(function () {
-        issueToken();
+        console.log("Trying reissue first...");
+        reissueTokenWithCallback(
+            () => {
+                console.log("Reissue success → ready to call APIs.");
+                loadTodos();
+            },
+            () => {
+                console.log("Reissue failed → issuing new token...");
+                issueToken();
+            }
+        );
     });
 
     function loadTodos() {
@@ -360,6 +405,43 @@
                 loadTodos();
             }
         });
+    });
+
+    $(document).ajaxError(function(event, jqXHR, ajaxSettings, thrownError) {
+        if (jqXHR.status === 401 && !isRefreshing) {
+            isRefreshing = true;
+            console.log("AccessToken expired → trying reissue...");
+
+            reissueTokenWithCallback(
+                () => {
+                    isRefreshing = false;
+                    onRefreshed(accessToken);
+                    // Retry the original request with the new token
+                    $.ajax({
+                        ...ajaxSettings,
+                        headers: {
+                            ...(ajaxSettings.headers || {}),
+                            "Authorization": "Bearer " + accessToken
+                        }
+                    });
+                },
+                () => {
+                    isRefreshing = false;
+                    alert("세션이 만료되었습니다. 새로고침 해주세요.");
+                }
+            );
+        } else if (jqXHR.status === 401 && isRefreshing) {
+            console.log("Already refreshing token → queuing request");
+            subscribeTokenRefresh((newToken) => {
+                $.ajax({
+                    ...ajaxSettings,
+                    headers: {
+                        ...(ajaxSettings.headers || {}),
+                        "Authorization": "Bearer " + newToken
+                    }
+                });
+            });
+        }
     });
 
 </script>
