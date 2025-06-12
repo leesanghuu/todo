@@ -35,3 +35,6 @@ out/
 
 ### VS Code ###
 .vscode/
+
+# 개발용 config는 gitignore에 추가
+src/main/resources/application-dev.yml
